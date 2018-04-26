@@ -1,28 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Globalization;
+using static cslox.TokenType;
 
 namespace cslox
 {
     public class Scanner
     {
         private static readonly Dictionary<string, TokenType> Keywords = new Dictionary<string, TokenType> {
-            {"and", TokenType.And},
-            {"class", TokenType.Class},
-            {"else", TokenType.Else},
-            {"false", TokenType.False},
-            {"for", TokenType.For},
-            {"fun", TokenType.Fun},
-            {"if", TokenType.If},
-            {"nil", TokenType.Nil},
-            {"or", TokenType.Or},
-            {"print", TokenType.Print},
-            {"return", TokenType.Return},
-            {"super", TokenType.Super},
-            {"this", TokenType.This},
-            {"true", TokenType.True},
-            {"var", TokenType.Var},
-            {"while", TokenType.While}
+            {"and", And},
+            {"class", Class},
+            {"else", Else},
+            {"false", False},
+            {"for", For},
+            {"fun", Fun},
+            {"if", If},
+            {"nil", Nil},
+            {"or", Or},
+            {"print", Print},
+            {"return", Return},
+            {"super", Super},
+            {"this", This},
+            {"true", True},
+            {"var", Var},
+            {"while", While}
         };
 
         private readonly string source;
@@ -45,7 +45,7 @@ namespace cslox
                 ScanToken();
             }
 
-            tokens.Add(new Token(TokenType.Eof, "", null, line));
+            tokens.Add(new Token(EOF, "", null, line));
             return tokens;
         }
 
@@ -55,27 +55,27 @@ namespace cslox
 
             switch (c)
             {
-                case '(': AddToken(TokenType.LeftParen); break;
-                case ')': AddToken(TokenType.RightParen); break;
-                case '{': AddToken(TokenType.LeftBrace); break;
-                case '}': AddToken(TokenType.RightBrace); break;
-                case ',': AddToken(TokenType.Comma); break;
-                case '.': AddToken(TokenType.Dot); break;
-                case '-': AddToken(TokenType.Minus); break;
-                case '+': AddToken(TokenType.Plus); break;
-                case ';': AddToken(TokenType.Semicolon); break;
-                case '*': AddToken(TokenType.Star); break;
+                case '(': AddToken(LeftParen); break;
+                case ')': AddToken(RightParen); break;
+                case '{': AddToken(LeftBrace); break;
+                case '}': AddToken(RightBrace); break;
+                case ',': AddToken(Comma); break;
+                case '.': AddToken(Dot); break;
+                case '-': AddToken(Minus); break;
+                case '+': AddToken(Plus); break;
+                case ';': AddToken(Semicolon); break;
+                case '*': AddToken(Star); break;
 
-                case '!': AddToken(Match('=') ? TokenType.BangEqual : TokenType.Bang); break;
-                case '=': AddToken(Match('=') ? TokenType.EqualEqual : TokenType.Equal); break;
-                case '<': AddToken(Match('=') ? TokenType.LessEqual : TokenType.Less); break;
-                case '>': AddToken(Match('=') ? TokenType.GreaterEqual : TokenType.Greater); break;
+                case '!': AddToken(Match('=') ? BangEqual : Bang); break;
+                case '=': AddToken(Match('=') ? EqualEqual : Equal); break;
+                case '<': AddToken(Match('=') ? LessEqual : Less); break;
+                case '>': AddToken(Match('=') ? GreaterEqual : Greater); break;
 
                 case '/':
                     if (Match('/'))
                         while (Peek() != '\n' && !IsAtEnd()) Advance();
                     else
-                        AddToken(TokenType.Slash);
+                        AddToken(Slash);
 
                     break;
 
@@ -95,7 +95,7 @@ namespace cslox
                     else if (IsAlpha(c))
                         Identifier();
                     else
-                        Program.Error(line, "Unexpected character.");
+                        Lox.Error(line, $"Unexpected character: {c}");
 
                     break;
             }
@@ -111,7 +111,7 @@ namespace cslox
 
             if (IsAtEnd())
             {
-                Program.Error(line, "Unterminated string.");
+                Lox.Error(line, "Unterminated string.");
                 return;
             }
 
