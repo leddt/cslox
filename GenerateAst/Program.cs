@@ -34,7 +34,7 @@ namespace GenerateAst
                 writer.WriteLine($"  [System.CodeDom.Compiler.GeneratedCode(\"cslox.GenerateAst\", \"0.0.0\")]");
                 writer.WriteLine($"  public abstract class {baseName} {{");
 
-                writer.WriteLine($"    public abstract T Accept<T>(Visitor<T> visitor);");
+                writer.WriteLine($"    public abstract T Accept<T>(I{baseName}Visitor<T> visitor);");
 
                 DefineVisitor(writer, baseName, types);
 
@@ -50,21 +50,21 @@ namespace GenerateAst
             }
         }
 
-        private static void DefineVisitor(StreamWriter writer, string baseName, string[] types)
+        private static void DefineVisitor(TextWriter writer, string baseName, string[] types)
         {
             writer.WriteLine();
-            writer.WriteLine("    public interface Visitor<T> {");
+            writer.WriteLine($"    public interface I{baseName}Visitor<T> {{");
 
             foreach (var type in types)
             {
                 var name = type.Split(':')[0].Trim();
-                writer.WriteLine($"      T Visit{name}{baseName}({name} {baseName.ToLower()});");
+                writer.WriteLine($"      T Visit({name} {baseName.ToLower()});");
             }
 
-            writer.WriteLine("    }");
+            writer.WriteLine($"    }}");
         }
 
-        private static void DefineType(StreamWriter writer, string baseName, string className, string fieldList)
+        private static void DefineType(TextWriter writer, string baseName, string className, string fieldList)
         {
             var fields = fieldList.Split(",")
                 .Select(f => f.Trim())
@@ -92,8 +92,8 @@ namespace GenerateAst
             writer.WriteLine();
 
             // Visitor pattern
-            writer.WriteLine($"      public override T Accept<T>(Visitor<T> visitor) {{");
-            writer.WriteLine($"        return visitor.Visit{className}{baseName}(this);");
+            writer.WriteLine($"      public override T Accept<T>(I{baseName}Visitor<T> visitor) {{");
+            writer.WriteLine($"        return visitor.Visit(this);");
             writer.WriteLine($"      }}");
 
             writer.WriteLine($"    }}");

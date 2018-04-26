@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Globalization;
+
 using static cslox.TokenType;
 
 namespace cslox
@@ -79,7 +80,7 @@ namespace cslox
 
                     break;
 
-                case '"': String(); break;
+                case '"': ScanString(); break;
 
                 case ' ':
                 case '\r':
@@ -91,9 +92,9 @@ namespace cslox
 
                 default:
                     if (IsDigit(c))
-                        Number();
+                        ScanNumber();
                     else if (IsAlpha(c))
-                        Identifier();
+                        ScanIdentifier();
                     else
                         Lox.Error(line, $"Unexpected character: {c}");
 
@@ -101,7 +102,7 @@ namespace cslox
             }
         }
 
-        private void String()
+        private void ScanString()
         {
             while (Peek() != '"' && !IsAtEnd())
             {
@@ -118,10 +119,10 @@ namespace cslox
             Advance();
 
             var value = Substring(start + 1, current - 1);
-            AddToken(TokenType.String, value);
+            AddToken(String, value);
         }
 
-        private void Number()
+        private void ScanNumber()
         {
             while (IsDigit(Peek())) Advance();
 
@@ -131,10 +132,10 @@ namespace cslox
                 while (IsDigit(Peek())) Advance();
             }
 
-            AddToken(TokenType.Number, double.Parse(Substring(start, current), CultureInfo.InvariantCulture));
+            AddToken(Number, double.Parse(Substring(start, current), CultureInfo.InvariantCulture));
         }
 
-        private void Identifier()
+        private void ScanIdentifier()
         {
             while (IsAlphaNumeric(Peek())) Advance();
 
@@ -143,7 +144,7 @@ namespace cslox
             if (Keywords.TryGetValue(text, out var tokenType))
                 AddToken(tokenType);
             else
-                AddToken(TokenType.Identifier);
+                AddToken(Identifier);
         }
 
 

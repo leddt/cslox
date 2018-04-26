@@ -1,13 +1,13 @@
 namespace cslox {
   [System.CodeDom.Compiler.GeneratedCode("cslox.GenerateAst", "0.0.0")]
   public abstract class Expr {
-    public abstract T Accept<T>(Visitor<T> visitor);
+    public abstract T Accept<T>(IExprVisitor<T> visitor);
 
-    public interface Visitor<T> {
-      T VisitBinaryExpr(Binary expr);
-      T VisitGroupingExpr(Grouping expr);
-      T VisitLiteralExpr(Literal expr);
-      T VisitUnaryExpr(Unary expr);
+    public interface IExprVisitor<T> {
+      T Visit(Binary expr);
+      T Visit(Grouping expr);
+      T Visit(Literal expr);
+      T Visit(Unary expr);
     }
 
     public class Binary : Expr {
@@ -21,8 +21,8 @@ namespace cslox {
         Right = right;
       }
 
-      public override T Accept<T>(Visitor<T> visitor) {
-        return visitor.VisitBinaryExpr(this);
+      public override T Accept<T>(IExprVisitor<T> visitor) {
+        return visitor.Visit(this);
       }
     }
 
@@ -33,8 +33,8 @@ namespace cslox {
         Expression = expression;
       }
 
-      public override T Accept<T>(Visitor<T> visitor) {
-        return visitor.VisitGroupingExpr(this);
+      public override T Accept<T>(IExprVisitor<T> visitor) {
+        return visitor.Visit(this);
       }
     }
 
@@ -45,8 +45,8 @@ namespace cslox {
         Value = value;
       }
 
-      public override T Accept<T>(Visitor<T> visitor) {
-        return visitor.VisitLiteralExpr(this);
+      public override T Accept<T>(IExprVisitor<T> visitor) {
+        return visitor.Visit(this);
       }
     }
 
@@ -59,8 +59,8 @@ namespace cslox {
         Right = right;
       }
 
-      public override T Accept<T>(Visitor<T> visitor) {
-        return visitor.VisitUnaryExpr(this);
+      public override T Accept<T>(IExprVisitor<T> visitor) {
+        return visitor.Visit(this);
       }
     }
   }

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
 using static cslox.TokenType;
@@ -121,7 +120,7 @@ namespace cslox
             if (Match(True)) return new Literal(true);
             if (Match(Nil)) return new Literal(null);
 
-            if (Match(Number, TokenType.String)) return new Literal(Previous().Literal);
+            if (Match(Number, String)) return new Literal(Previous().Literal);
 
             if (Match(LeftParen))
             {
@@ -200,6 +199,6 @@ namespace cslox
         private Token Previous() => tokens[current - 1];
 
 
-        public class ParserErrorException : Exception {}
+        public class ParserErrorException : System.Exception {}
     }
 }
