@@ -30,20 +30,30 @@ namespace cslox
             Report(line, "", message);
         }
 
+        public static void Error(Token token, string message)
+        {
+            if (token.Type == TokenType.EOF)
+                Report(token.Line, " at end", message);
+            else
+                Report(token.Line, $" at '{token.Lexeme}'", message);
+        }
+
         private static void Run(string source)
         {
             var scanner = new Scanner(source);
             var tokens = scanner.ScanTokens();
 
-            foreach (var token in tokens)
-            {
-                Console.WriteLine(token);
-            }
+            var parser = new Parser(tokens);
+            var expr = parser.Parse();
+
+            if (hadError) return;
+
+            Console.WriteLine(new AstPrinter().Print(expr));
         }
 
         private static void Report(int line, string where, string message)
         {
-            Console.WriteLine("[line {0}] Error{1}: {1}", line, where, message);
+            Console.WriteLine("[line {0}] Error{1}: {2}", line, where, message);
             hadError = true;
         }
     }
