@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27004.2008
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "cslox", "cslox\cslox.csproj", "{8838940B-F430-42DF-8031-CEDC3F561BE3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8838940B-F430-42DF-8031-CEDC3F561BE3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8838940B-F430-42DF-8031-CEDC3F561BE3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8838940B-F430-42DF-8031-CEDC3F561BE3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8838940B-F430-42DF-8031-CEDC3F561BE3}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7ABE640C-6076-4017-9EF3-8DA15A044E89}
+	EndGlobalSection
+EndGlobal
