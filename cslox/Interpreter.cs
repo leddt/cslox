@@ -33,6 +33,8 @@ namespace cslox
                     return ld - rd;
                 case Slash:
                     (ld, rd) = CheckNumberOperands(expr.Op, left, right);
+                    if (rd == 0) throw new RuntimeErrorException(expr.Op, "Attempt to divide by zero.");
+
                     return ld / rd;
                 case Star:
                     (ld, rd) = CheckNumberOperands(expr.Op, left, right);
