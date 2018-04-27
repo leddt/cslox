@@ -24,39 +24,41 @@ namespace cslox
             var left = Evaluate(expr.Left);
             var right = Evaluate(expr.Right);
 
+            double ld, rd;
+
             switch (expr.Op.Type)
             {
                 case Minus:
-                    CheckNumberOperands(expr.Op, left, right);
-                    return (double) left - (double) right;
+                    (ld, rd) = CheckNumberOperands(expr.Op, left, right);
+                    return ld - rd;
                 case Slash:
-                    CheckNumberOperands(expr.Op, left, right);
-                    return (double) left / (double) right;
+                    (ld, rd) = CheckNumberOperands(expr.Op, left, right);
+                    return ld / rd;
                 case Star:
-                    CheckNumberOperands(expr.Op, left, right);
-                    return (double) left * (double) right;
+                    (ld, rd) = CheckNumberOperands(expr.Op, left, right);
+                    return ld * rd;
 
                 case Plus:
-                    if (left is double ld && right is double rd)
-                        return ld + rd;
+                    if (TryCheckOperands<double>(left, right, out var plusNumbers))
+                        return plusNumbers.left + plusNumbers.right;
 
-                    if (left is string ls && right is string rs)
-                        return string.Concat(ls, rs);
+                    if (TryCheckOperands<string>(left, right, out var plusStrings))
+                        return string.Concat(plusStrings.left, plusStrings.right);
 
                     throw new RuntimeErrorException(expr.Op, "Operands must be two numbers or two strings.");
 
                 case Greater:
-                    CheckNumberOperands(expr.Op, left, right);
-                    return (double) left >  (double) right;
+                    (ld, rd) = CheckNumberOperands(expr.Op, left, right);
+                    return ld > rd;
                 case GreaterEqual:
-                    CheckNumberOperands(expr.Op, left, right);
-                    return (double) left >= (double) right;
+                    (ld, rd) = CheckNumberOperands(expr.Op, left, right);
+                    return ld >= rd;
                 case Less:
-                    CheckNumberOperands(expr.Op, left, right);
-                    return (double) left <  (double) right;
+                    (ld, rd) = CheckNumberOperands(expr.Op, left, right);
+                    return ld < rd;
                 case LessEqual:
-                    CheckNumberOperands(expr.Op, left, right);
-                    return (double) left <= (double) right;
+                    (ld, rd) = CheckNumberOperands(expr.Op, left, right);
+                    return ld <= rd;
 
                 case EqualEqual: return IsEqual(left, right);
                 case BangEqual: return !IsEqual(left, right);
@@ -82,8 +84,8 @@ namespace cslox
             switch (expr.Op.Type)
             {
                 case Minus:
-                    CheckNumberOperand(expr.Op, right);
-                    return -(double) right;
+                    var number = CheckNumberOperand(expr.Op, right);
+                    return -number;
                 case Bang:
                     return !IsTruthy(right);
             }
@@ -117,16 +119,28 @@ namespace cslox
             return value.ToString();
         }
 
-        private void CheckNumberOperand(Token @operator, object operand)
+        private double CheckNumberOperand(Token @operator, object operand)
         {
-            if (operand is double) return;
+            if (operand is double d) return d;
             throw new RuntimeErrorException(@operator, "Operand must be a number.");
         }
 
-        private void CheckNumberOperands(Token @operator, object left, object right)
+        private (double, double) CheckNumberOperands(Token @operator, object left, object right)
         {
-            if (left is double && right is double) return;
+            if (TryCheckOperands<double>(left, right, out var result)) return result;
             throw new RuntimeErrorException(@operator, "Operands must be numbers.");
+        }
+        
+        private bool TryCheckOperands<T>(object left, object right, out (T left, T right) result)
+        {
+            if (left is T l && right is T r)
+            {
+                result = (l, r);
+                return true;
+            }
+
+            result = (default(T), default(T));
+            return false;
         }
     }
 }
