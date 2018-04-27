@@ -6,6 +6,9 @@ namespace cslox
     public static class Lox
     {
         private static bool hadError;
+        private static bool hadRuntimeError;
+
+        private static readonly Interpreter interpreter = new Interpreter();
 
         public static void RunFile(string path)
         {
@@ -13,6 +16,7 @@ namespace cslox
             Run(source);
 
             if (hadError) Environment.Exit(65);
+            if (hadRuntimeError) Environment.Exit(70);
         }
 
         public static void RunPrompt()
@@ -23,6 +27,19 @@ namespace cslox
                 Run(Console.ReadLine());
                 hadError = false;
             }
+        }
+
+        private static void Run(string source)
+        {
+            var scanner = new Scanner(source);
+            var tokens = scanner.ScanTokens();
+
+            var parser = new Parser(tokens);
+            var expr = parser.Parse();
+
+            if (hadError) return;
+
+            interpreter.Interpret(expr);
         }
 
         public static void Error(int line, string message)
@@ -38,17 +55,12 @@ namespace cslox
                 Report(token.Line, $" at '{token.Lexeme}'", message);
         }
 
-        private static void Run(string source)
+        public static void RuntimeError(RuntimeErrorException error)
         {
-            var scanner = new Scanner(source);
-            var tokens = scanner.ScanTokens();
+            Console.WriteLine(error.Message);
+            Console.WriteLine($"[line {error.Token.Line}]");
 
-            var parser = new Parser(tokens);
-            var expr = parser.Parse();
-
-            if (hadError) return;
-
-            Console.WriteLine(new AstPrinter().Print(expr));
+            hadRuntimeError = true;
         }
 
         private static void Report(int line, string where, string message)
