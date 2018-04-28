@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -17,11 +18,19 @@ namespace GenerateAst
             var outputDir = args[0];
 
             DefineAst(outputDir, "Expr",
+                "Assign   : Token name, Expr value",
                 "Binary   : Expr left, Token op, Expr right",
                 "Grouping : Expr expression",
                 "Literal  : object value",
-                "Unary    : Token op, Expr right"
+                "Unary    : Token op, Expr right",
+                "Variable : Token name"
             );
+
+            DefineAst(outputDir, "Stmt",
+                "Block      : List<Stmt> statements",
+                "Expression : Expr expr",
+                "Print      : Expr expr",
+                "Var        : Token name, Expr initializer");
         }
 
         private static void DefineAst(string outputDir, string baseName, params string[] types)
@@ -31,6 +40,8 @@ namespace GenerateAst
             using (var writer = File.CreateText(path))
             {
                 writer.WriteLine("namespace cslox {");
+                writer.WriteLine($"  using System.Collections.Generic;");
+                writer.WriteLine();
                 writer.WriteLine($"  [System.CodeDom.Compiler.GeneratedCode(\"cslox.GenerateAst\", \"0.0.0\")]");
                 writer.WriteLine($"  public abstract class {baseName} {{");
 

@@ -7,15 +7,33 @@ using static cslox.Expr;
 namespace cslox
 {
     /*
-       expression     → equality ;
-       equality       → comparison ( ( "!=" | "==" ) comparison )* ;
-       comparison     → addition ( ( ">" | ">=" | "<" | "<=" ) addition )* ;
-       addition       → multiplication ( ( "-" | "+" ) multiplication )* ;
-       multiplication → unary ( ( "/" | "*" ) unary )* ;
-       unary          → ( "!" | "-" ) unary
-                      | primary ;
-       primary        → NUMBER | STRING | "false" | "true" | "nil"
-                      | "(" expression ")" ;
+        program        → declaration* EOF ;
+                      
+        declaration    → varDecl
+                       | statement ;
+                      
+        varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
+        statement      → exprStmt
+                       | printStmt
+                       | block;
+                      
+        exprStmt       → expression ";" ;
+        printStmt      → "print" expression ";" ;
+        block          → "{" declaration* "}" ;
+        
+        expression     → assignment ;
+        assignment     → identifier "=" assignment
+                       | equality ;
+        equality       → comparison ( ( "!=" | "==" ) comparison )* ;
+        comparison     → addition ( ( ">" | ">=" | "<" | "<=" ) addition )* ;
+        addition       → multiplication ( ( "-" | "+" ) multiplication )* ;
+        multiplication → unary ( ( "/" | "*" ) unary )* ;
+        unary          → ( "!" | "-" ) unary
+                       | primary ;
+        primary        → "true" | "false" | "nil" | "this"
+                       | NUMBER | STRING
+                       | "(" expression ")"
+                       | IDENTIFIER ;
      */
 
     public class Parser
@@ -28,21 +46,101 @@ namespace cslox
             this.tokens = tokens;
         }
 
-        public Expr Parse()
+        public List<Stmt> Parse()
+        {
+            var statements = new List<Stmt>();
+
+            while (!IsAtEnd())
+                statements.Add(Declaration());
+
+            return statements;
+        }
+
+        private Stmt Declaration()
         {
             try
             {
-                return Expression();
+                if (Match(Var)) return VarDeclaration();
+                return Statement();
             }
             catch (ParserErrorException)
             {
+                Synchronize();
                 return null;
             }
         }
 
+        private Stmt VarDeclaration()
+        {
+            var name = Consume(Identifier, "Expect variable name.");
+
+            var initializer = Match(Equal) 
+                ? Expression() 
+                : null;
+
+            Consume(Semicolon, "Expect ';' after variable declaration.");
+            return new Stmt.Var(name, initializer);
+        }
+
+        private Stmt Statement()
+        {
+            if (Match(Print)) return PrintStatement();
+            if (Match(LeftBrace)) return BlockStatement();
+            return ExpressionStatement();
+        }
+
+        private Stmt PrintStatement()
+        {
+            var value = Expression();
+            Consume(Semicolon, "Expect ';' after value.");
+
+            return new Stmt.Print(value);
+        }
+
+        private Stmt.Block BlockStatement()
+        {
+            var statements = new List<Stmt>();
+
+            while (!Check(RightBrace) && !IsAtEnd())
+                statements.Add(Declaration());
+
+            Consume(RightBrace, "Expect '}' after block.");
+
+            return new Stmt.Block(statements);
+        }
+
+        private Stmt ExpressionStatement()
+        {
+            var expr = Expression();
+            Consume(Semicolon, "Expect ';' after expression.");
+
+            return new Stmt.Expression(expr);
+        }
+
         private Expr Expression()
         {
-            return Equality();
+            return Assignment();
+        }
+
+        private Expr Assignment()
+        {
+            var expr = Equality();
+
+            if (Match(Equal))
+            {
+                var equals = Previous();
+                var value = Assignment();
+
+                if (expr is Variable varExpr)
+                {
+                    var name = varExpr.Name;
+                    return new Assign(name, value);
+                }
+
+                Error(equals, "Invalid assignment target.");
+            }
+
+            return expr;
         }
 
         private Expr Equality()
@@ -121,6 +219,8 @@ namespace cslox
             if (Match(Nil)) return new Literal(null);
 
             if (Match(Number, String)) return new Literal(Previous().Literal);
+
+            if (Match(Identifier)) return new Variable(Previous());
 
             if (Match(LeftParen))
             {

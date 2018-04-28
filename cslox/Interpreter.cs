@@ -1,22 +1,67 @@
 ﻿using System;
+using System.Collections.Generic;
 using static cslox.Expr;
 using static cslox.TokenType;
 
 namespace cslox
 {
-    public class Interpreter : IExprVisitor<object>
+    public class Interpreter : IExprVisitor<object>, Stmt.IStmtVisitor<Void>
     {
-        public void Interpret(Expr expression)
+        private Environment environment = new Environment();
+
+        public void Interpret(List<Stmt> statements)
         {
             try
             {
-                var value = Evaluate(expression);
-                Console.WriteLine(Stringify(value));
+                foreach (var stmt in statements)
+                    Execute(stmt);
             }
             catch (RuntimeErrorException error)
             {
                 Lox.RuntimeError(error);
             }
+        }
+
+
+        public Void Visit(Stmt.Block stmt)
+        {
+            ExecuteBlock(stmt.Statements, new Environment(environment));
+            return null;
+        }
+
+        public Void Visit(Stmt.Expression stmt)
+        {
+            Evaluate(stmt.Expr);
+
+            return Void.Instance;
+        }
+
+        public Void Visit(Stmt.Print stmt)
+        {
+            var value = Evaluate(stmt.Expr);
+            Console.WriteLine(Stringify(value));
+
+            return Void.Instance;
+        }
+
+        public Void Visit(Stmt.Var stmt)
+        {
+            var value = stmt.Initializer != null
+                ? Evaluate(stmt.Initializer)
+                : null;
+
+            environment.Define(stmt.Name, value);
+
+            return Void.Instance;
+        }
+
+
+        public object Visit(Assign expr)
+        {
+            var value = Evaluate(expr.Value);
+
+            environment.Assign(expr.Name, value);
+            return value;
         }
 
         public object Visit(Binary expr)
@@ -95,6 +140,28 @@ namespace cslox
             return null;
         }
 
+        public object Visit(Variable expr)
+        {
+            return environment.Get(expr.Name);
+        }
+
+        private void Execute(Stmt stmt) => stmt.Accept(this);
+
+        private void ExecuteBlock(List<Stmt> statements, Environment env)
+        {
+            var previousEnv = environment;
+
+            try
+            {
+                environment = env;
+                foreach (var stmt in statements)
+                    Execute(stmt);
+            }
+            finally
+            {
+                environment = previousEnv;
+            }
+        }
 
         private object Evaluate(Expr expr) => expr.Accept(this);
 
@@ -144,5 +211,11 @@ namespace cslox
             result = (default(T), default(T));
             return false;
         }
+    }
+
+    public class Void
+    {
+        public static readonly Void Instance = new Void();
+        private Void() {}
     }
 }

@@ -1,13 +1,31 @@
 namespace cslox {
+  using System.Collections.Generic;
+
   [System.CodeDom.Compiler.GeneratedCode("cslox.GenerateAst", "0.0.0")]
   public abstract class Expr {
     public abstract T Accept<T>(IExprVisitor<T> visitor);
 
     public interface IExprVisitor<T> {
+      T Visit(Assign expr);
       T Visit(Binary expr);
       T Visit(Grouping expr);
       T Visit(Literal expr);
       T Visit(Unary expr);
+      T Visit(Variable expr);
+    }
+
+    public class Assign : Expr {
+      public Token Name { get; }
+      public Expr Value { get; }
+
+      public Assign(Token name, Expr value) {
+        Name = name;
+        Value = value;
+      }
+
+      public override T Accept<T>(IExprVisitor<T> visitor) {
+        return visitor.Visit(this);
+      }
     }
 
     public class Binary : Expr {
@@ -57,6 +75,18 @@ namespace cslox {
       public Unary(Token op, Expr right) {
         Op = op;
         Right = right;
+      }
+
+      public override T Accept<T>(IExprVisitor<T> visitor) {
+        return visitor.Visit(this);
+      }
+    }
+
+    public class Variable : Expr {
+      public Token Name { get; }
+
+      public Variable(Token name) {
+        Name = name;
       }
 
       public override T Accept<T>(IExprVisitor<T> visitor) {

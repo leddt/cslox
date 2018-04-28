@@ -7,7 +7,12 @@ namespace cslox
     public class AstPrinter : IExprVisitor<string>
     {
         public string Print(Expr expr) => expr.Accept(this);
-        
+
+
+        public string Visit(Assign expr)
+        {
+            return Parenthesize($"assign {expr.Name}", expr.Value);
+        }
 
         public string Visit(Binary expr)
         {
@@ -29,6 +34,11 @@ namespace cslox
         public string Visit(Unary expr)
         {
             return Parenthesize(expr.Op.Lexeme, expr.Right);
+        }
+
+        public string Visit(Variable expr)
+        {
+            return Parenthesize($"variable {expr.Name}");
         }
 
 
