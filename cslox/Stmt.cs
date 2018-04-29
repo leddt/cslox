@@ -8,8 +8,10 @@ namespace cslox {
     public interface IStmtVisitor<T> {
       T Visit(Block stmt);
       T Visit(Expression stmt);
+      T Visit(If stmt);
       T Visit(Print stmt);
       T Visit(Var stmt);
+      T Visit(While stmt);
     }
 
     public class Block : Stmt {
@@ -36,6 +38,22 @@ namespace cslox {
       }
     }
 
+    public class If : Stmt {
+      public Expr Condition { get; }
+      public Stmt ThenBranch { get; }
+      public Stmt ElseBranch { get; }
+
+      public If(Expr condition, Stmt thenBranch, Stmt elseBranch) {
+        Condition = condition;
+        ThenBranch = thenBranch;
+        ElseBranch = elseBranch;
+      }
+
+      public override T Accept<T>(IStmtVisitor<T> visitor) {
+        return visitor.Visit(this);
+      }
+    }
+
     public class Print : Stmt {
       public Expr Expr { get; }
 
@@ -55,6 +73,20 @@ namespace cslox {
       public Var(Token name, Expr initializer) {
         Name = name;
         Initializer = initializer;
+      }
+
+      public override T Accept<T>(IStmtVisitor<T> visitor) {
+        return visitor.Visit(this);
+      }
+    }
+
+    public class While : Stmt {
+      public Expr Condition { get; }
+      public Stmt Body { get; }
+
+      public While(Expr condition, Stmt body) {
+        Condition = condition;
+        Body = body;
       }
 
       public override T Accept<T>(IStmtVisitor<T> visitor) {

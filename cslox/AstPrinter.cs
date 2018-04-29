@@ -31,6 +31,11 @@ namespace cslox
                 : expr.Value.ToString();
         }
 
+        public string Visit(Logical expr)
+        {
+            return $"({expr.Left.Accept(this)} {expr.Op.Lexeme} {expr.Right.Accept(this)})";
+        }
+
         public string Visit(Unary expr)
         {
             return Parenthesize(expr.Op.Lexeme, expr.Right);

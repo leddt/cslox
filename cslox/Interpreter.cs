@@ -26,12 +26,23 @@ namespace cslox
         public Void Visit(Stmt.Block stmt)
         {
             ExecuteBlock(stmt.Statements, new Environment(environment));
-            return null;
+
+            return Void.Instance;
         }
 
         public Void Visit(Stmt.Expression stmt)
         {
             Evaluate(stmt.Expr);
+
+            return Void.Instance;
+        }
+
+        public Void Visit(Stmt.If stmt)
+        {
+            if (IsTruthy(Evaluate(stmt.Condition)))
+                Execute(stmt.ThenBranch);
+            else if (stmt.ElseBranch != null)
+                Execute(stmt.ElseBranch);
 
             return Void.Instance;
         }
@@ -51,6 +62,14 @@ namespace cslox
                 : null;
 
             environment.Define(stmt.Name, value);
+
+            return Void.Instance;
+        }
+
+        public Void Visit(Stmt.While stmt)
+        {
+            while (IsTruthy(Evaluate(stmt.Condition)))
+                Execute(stmt.Body);
 
             return Void.Instance;
         }
@@ -122,6 +141,22 @@ namespace cslox
         public object Visit(Literal expr)
         {
             return expr.Value;
+        }
+
+        public object Visit(Logical expr)
+        {
+            var left = Evaluate(expr.Left);
+
+            if (expr.Op.Type == Or)
+            {
+                if (IsTruthy(left)) return left;
+            }
+            else
+            {
+                if (!IsTruthy(left)) return left;
+            }
+
+            return Evaluate(expr.Right);
         }
 
         public object Visit(Unary expr)
@@ -213,7 +248,7 @@ namespace cslox
         }
     }
 
-    public class Void
+    public sealed class Void
     {
         public static readonly Void Instance = new Void();
         private Void() {}

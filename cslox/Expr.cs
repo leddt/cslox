@@ -10,6 +10,7 @@ namespace cslox {
       T Visit(Binary expr);
       T Visit(Grouping expr);
       T Visit(Literal expr);
+      T Visit(Logical expr);
       T Visit(Unary expr);
       T Visit(Variable expr);
     }
@@ -61,6 +62,22 @@ namespace cslox {
 
       public Literal(object value) {
         Value = value;
+      }
+
+      public override T Accept<T>(IExprVisitor<T> visitor) {
+        return visitor.Visit(this);
+      }
+    }
+
+    public class Logical : Expr {
+      public Expr Left { get; }
+      public Token Op { get; }
+      public Expr Right { get; }
+
+      public Logical(Expr left, Token op, Expr right) {
+        Left = left;
+        Op = op;
+        Right = right;
       }
 
       public override T Accept<T>(IExprVisitor<T> visitor) {

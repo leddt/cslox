@@ -14,16 +14,26 @@ namespace cslox
                       
         varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
         statement      → exprStmt
+                       | forStmt
+                       | ifStmt
                        | printStmt
+                       | whileStmt
                        | block;
                       
         exprStmt       → expression ";" ;
+        forStmt        → "for" "(" ( varDecl | exprStmt | ";" )
+                                   expression? ";"
+                                   expression? ")" statement ;
+        ifStmt         → "if" "(" expression ")" statement ( "else" statement )? ;
         printStmt      → "print" expression ";" ;
+        whileStmt      → "while" "(" expression ")" statement ;
         block          → "{" declaration* "}" ;
         
         expression     → assignment ;
         assignment     → identifier "=" assignment
-                       | equality ;
+                       | logic_or ;
+        logic_or       → logic_and ( "or" logic_and )* ;
+        logic_and      → equality ( "and" equality ) ;
         equality       → comparison ( ( "!=" | "==" ) comparison )* ;
         comparison     → addition ( ( ">" | ">=" | "<" | "<=" ) addition )* ;
         addition       → multiplication ( ( "-" | "+" ) multiplication )* ;
@@ -84,9 +94,68 @@ namespace cslox
 
         private Stmt Statement()
         {
+            if (Match(For)) return ForStatement();
+            if (Match(If)) return IfStatement();
             if (Match(Print)) return PrintStatement();
+            if (Match(While)) return WhileStatement();
             if (Match(LeftBrace)) return BlockStatement();
             return ExpressionStatement();
+        }
+
+        private Stmt ForStatement()
+        {
+            Consume(LeftParen, "Expect '(' after 'for'.");
+
+            Stmt initializer;
+            if (Match(Semicolon))
+                initializer = null;
+            else if (Match(Var))
+                initializer = VarDeclaration();
+            else
+                initializer = ExpressionStatement();
+
+            var condition = Check(Semicolon) ? null : Expression();
+            Consume(Semicolon, "Expect ';' after loop condition.");
+
+            var increment = Check(RightParen) ? null : Expression();
+            Consume(RightParen, "Expect ')' after for clauses.");
+
+            var body = Statement();
+
+            if (increment != null)
+            {
+                body = new Stmt.Block(new List<Stmt> {
+                    body,
+                    new Stmt.Expression(increment)
+                });
+            }
+
+            if (condition == null) condition = new Literal(true);
+            body = new Stmt.While(condition, body);
+
+            if (initializer != null)
+            {
+                body = new Stmt.Block(new List<Stmt> {
+                    initializer,
+                    body
+                });
+            }
+
+            return body;
+        }
+
+        private Stmt IfStatement()
+        {
+            Consume(LeftParen, "Expect '(' after 'if'.");
+            var condition = Expression();
+            Consume(RightParen, "Expect ')' after if condition.");
+
+            var thenBranch = Statement();
+            var elseBranch = Match(Else)
+                ? Statement()
+                : null;
+
+            return new Stmt.If(condition, thenBranch, elseBranch);
         }
 
         private Stmt PrintStatement()
@@ -95,6 +164,17 @@ namespace cslox
             Consume(Semicolon, "Expect ';' after value.");
 
             return new Stmt.Print(value);
+        }
+
+        private Stmt WhileStatement()
+        {
+            Consume(LeftParen, "Expect '(' after 'while'.");
+            var condition = Expression();
+            Consume(RightParen, "Expect ')' after while condition.");
+
+            var body = Statement();
+
+            return new Stmt.While(condition, body);
         }
 
         private Stmt.Block BlockStatement()
@@ -124,7 +204,7 @@ namespace cslox
 
         private Expr Assignment()
         {
-            var expr = Equality();
+            var expr = Or();
 
             if (Match(Equal))
             {
@@ -138,6 +218,34 @@ namespace cslox
                 }
 
                 Error(equals, "Invalid assignment target.");
+            }
+
+            return expr;
+        }
+
+        private Expr Or()
+        {
+            var expr = And();
+
+            while (Match(TokenType.Or))
+            {
+                var op = Previous();
+                var right = And();
+                expr = new Logical(expr, op, right);
+            }
+
+            return expr;
+        }
+
+        private Expr And()
+        {
+            var expr = Equality();
+
+            while (Match(TokenType.And))
+            {
+                var op = Previous();
+                var right = Equality();
+                expr = new Logical(expr, op, right);
             }
 
             return expr;
