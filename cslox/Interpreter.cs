@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 using static cslox.Expr;
@@ -9,6 +10,7 @@ namespace cslox
     public class Interpreter : IExprVisitor<object>, Stmt.IStmtVisitor<Void>
     {
         public readonly Environment Globals = new Environment();
+        private readonly Dictionary<Expr, int> locals = new Dictionary<Expr, int>();
         private Environment environment;
 
         public Interpreter()
@@ -103,7 +105,16 @@ namespace cslox
         {
             var value = Evaluate(expr.Value);
 
-            environment.Assign(expr.Name, value);
+            if (locals.ContainsKey(expr))
+            {
+                var distance = locals[expr];
+                environment.AssignAt(distance, expr.Name, value);
+            }
+            else
+            {
+                Globals.Assign(expr.Name, value);
+            }
+
             return value;
         }
 
@@ -215,7 +226,20 @@ namespace cslox
 
         public object Visit(Variable expr)
         {
-            return environment.Get(expr.Name);
+            return LookupVariable(expr.Name, expr);
+        }
+
+        private object LookupVariable(Token name, Expr expr)
+        {
+            if (locals.ContainsKey(expr))
+            {
+                var distance = locals[expr];
+                return environment.GetAt(distance, name.Lexeme);
+            }
+            else
+            {
+                return Globals.Get(name);
+            }
         }
 
         private void Execute(Stmt stmt) => stmt.Accept(this);
@@ -237,6 +261,11 @@ namespace cslox
         }
 
         private object Evaluate(Expr expr) => expr.Accept(this);
+
+        public void Resolve(Expr expr, int depth)
+        {
+            locals[expr] = depth;
+        }
 
         private bool IsTruthy(object value)
         {
@@ -284,21 +313,5 @@ namespace cslox
             result = (default(T), default(T));
             return false;
         }
-    }
-
-    public class ReturnException : Exception
-    {
-        public object Value { get; }
-
-        public ReturnException(object value)
-        {
-            Value = value;
-        }
-    }
-
-    public sealed class Void
-    {
-        public static readonly Void Instance = new Void();
-        private Void() {}
     }
 }
