@@ -41,6 +41,23 @@ namespace cslox
             return Void.Instance;
         }
 
+        public Void Visit(Stmt.Class stmt)
+        {
+            environment.Define(stmt.Name.Lexeme, null);
+
+            var methods = new Dictionary<string, LoxFunction>();
+            foreach (var method in stmt.Methods)
+            {
+                var function = new LoxFunction(method, environment, method.Name.Lexeme.Equals("this"));
+                methods[method.Name.Lexeme] = function;
+            }
+
+            var klass = new LoxClass(stmt.Name.Lexeme, methods);
+            environment.Assign(stmt.Name, klass);
+
+            return null;
+        }
+
         public Void Visit(Stmt.Expression stmt)
         {
             Evaluate(stmt.Expr);
@@ -50,7 +67,7 @@ namespace cslox
 
         public Void Visit(Stmt.Function stmt)
         {
-            var function = new LoxFunction(stmt, environment);
+            var function = new LoxFunction(stmt, environment, false);
             environment.Define(stmt.Name.Lexeme, function);
 
             return Void.Instance;
@@ -182,6 +199,15 @@ namespace cslox
             return function.Call(this, arguments);
         }
 
+        public object Visit(Get expr)
+        {
+            var obj = Evaluate(expr.Obj);
+            if (obj is LoxInstance instance)
+                return instance.Get(expr.Name);
+
+            throw new RuntimeErrorException(expr.Name, "Only instances have properties.");
+        }
+
         public object Visit(Grouping expr)
         {
             return Evaluate(expr.Expression);
@@ -206,6 +232,26 @@ namespace cslox
             }
 
             return Evaluate(expr.Right);
+        }
+
+        public object Visit(Set expr)
+        {
+            var obj = Evaluate(expr.Obj);
+
+            if (obj is LoxInstance instance)
+            {
+                var value = Evaluate(expr.Value);
+                instance.Set(expr.Name, value);
+
+                return value;
+            }
+
+            throw new RuntimeErrorException(expr.Name, "Only instances have fields.");
+        }
+
+        public object Visit(This expr)
+        {
+            return LookupVariable(expr.Keyword, expr);
         }
 
         public object Visit(Unary expr)

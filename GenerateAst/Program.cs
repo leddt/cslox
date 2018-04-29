@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -21,15 +20,19 @@ namespace GenerateAst
                 "Assign   : Token name, Expr value",
                 "Binary   : Expr left, Token op, Expr right",
                 "Call     : Expr callee, Token paren, Expr[] arguments",
+                "Get      : Expr obj, Token name",
                 "Grouping : Expr expression",
                 "Literal  : object value",
                 "Logical  : Expr left, Token op, Expr right",
+                "Set      : Expr obj, Token name, Expr value",
+                "This     : Token keyword",
                 "Unary    : Token op, Expr right",
                 "Variable : Token name"
             );
 
             DefineAst(outputDir, "Stmt",
                 "Block      : Stmt[] statements",
+                "Class      : Token name, Stmt.Function[] methods",
                 "Expression : Expr expr",
                 "Function   : Token name, Token[] parameters, Stmt[] body",
                 "If         : Expr condition, Stmt thenBranch, Stmt elseBranch",

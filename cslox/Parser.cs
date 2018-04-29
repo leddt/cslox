@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-
 using static cslox.TokenType;
 using static cslox.Expr;
 
@@ -9,11 +8,14 @@ namespace cslox
     /*
         program        → declaration* EOF ;
                       
-        declaration    → funDecl
+        declaration    → classDecl
+                       | funDecl
                        | varDecl
                        | statement ;
-                      
-        funDecl        → "fun" IDENTIFIER "(" parameters? ")" block ;
+
+        classDecl      → "class" IDENTIFIER "{" function* "}" ;
+        funDecl        → "fun" function ;
+        function       → IDENTIFIER "(" parameters? ")" block ;
         parameters     → IDENTIFIER ( "," IDENTIFIER )* ;
         varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
         statement      → exprStmt
@@ -35,7 +37,7 @@ namespace cslox
         block          → "{" declaration* "}" ;
         
         expression     → assignment ;
-        assignment     → identifier "=" assignment
+        assignment     → ( call "." )? identifier "=" assignment
                        | logic_or ;
         logic_or       → logic_and ( "or" logic_and )* ;
         logic_and      → equality ( "and" equality ) ;
@@ -45,7 +47,7 @@ namespace cslox
         multiplication → unary ( ( "/" | "*" ) unary )* ;
         unary          → ( "!" | "-" ) unary
                        | call ;
-        call           → primary ( "(" arguments? ")" )* ;
+        call           → primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
         arguments      → expression ( "," expression )* ;
         primary        → "true" | "false" | "nil" | "this"
                        | NUMBER | STRING
@@ -77,6 +79,7 @@ namespace cslox
         {
             try
             {
+                if (Match(Class)) return ClassDeclaration();
                 if (Match(Fun)) return FunctionDeclaration("function");
                 if (Match(Var)) return VarDeclaration();
                 return Statement();
@@ -88,7 +91,21 @@ namespace cslox
             }
         }
 
-        private Stmt FunctionDeclaration(string kind)
+        private Stmt ClassDeclaration()
+        {
+            var name = Consume(Identifier, "Expect class name.");
+            Consume(LeftBrace, "Expect '{' before class body.");
+
+            var methods = new List<Stmt.Function>();
+            while (!Check(RightBrace) && !IsAtEnd())
+                methods.Add(FunctionDeclaration("method"));
+
+            Consume(RightBrace, "Expect '}' after class body.");
+
+            return new Stmt.Class(name, methods.ToArray());
+        }
+
+        private Stmt.Function FunctionDeclaration(string kind)
         {
             var name = Consume(Identifier, $"Expect {kind} name.");
 
@@ -116,8 +133,8 @@ namespace cslox
         {
             var name = Consume(Identifier, "Expect variable name.");
 
-            var initializer = Match(Equal) 
-                ? Expression() 
+            var initializer = Match(Equal)
+                ? Expression()
                 : null;
 
             Consume(Semicolon, "Expect ';' after variable declaration.");
@@ -157,7 +174,7 @@ namespace cslox
 
             if (increment != null)
             {
-                body = new Stmt.Block(new [] {
+                body = new Stmt.Block(new[] {
                     body,
                     new Stmt.Expression(increment)
                 });
@@ -168,7 +185,7 @@ namespace cslox
 
             if (initializer != null)
             {
-                body = new Stmt.Block(new [] {
+                body = new Stmt.Block(new[] {
                     initializer,
                     body
                 });
@@ -256,10 +273,13 @@ namespace cslox
                 var equals = Previous();
                 var value = Assignment();
 
-                if (expr is Variable varExpr)
+                switch (expr)
                 {
-                    var name = varExpr.Name;
-                    return new Assign(name, value);
+                    case Variable varExpr:
+                        var name = varExpr.Name;
+                        return new Assign(name, value);
+                    case Get getExpr:
+                        return new Set(getExpr.Obj, getExpr.Name, value);
                 }
 
                 Error(equals, "Invalid assignment target.");
@@ -372,9 +392,18 @@ namespace cslox
             while (true)
             {
                 if (Match(LeftParen))
+                {
                     expr = FinishCall(expr);
+                }
+                else if (Match(Dot))
+                {
+                    var name = Consume(Identifier, "Expect property name after '.'.");
+                    expr = new Get(expr, name);
+                }
                 else
+                {
                     break;
+                }
             }
 
             return expr;
@@ -405,6 +434,8 @@ namespace cslox
             if (Match(Nil)) return new Literal(null);
 
             if (Match(Number, String)) return new Literal(Previous().Literal);
+
+            if (Match(TokenType.This)) return new This(Previous());
 
             if (Match(Identifier)) return new Variable(Previous());
 
@@ -458,7 +489,6 @@ namespace cslox
         }
 
 
-
         private bool Match(params TokenType[] types)
         {
             if (!types.Any(Check)) return false;
@@ -485,6 +515,8 @@ namespace cslox
         private Token Previous() => tokens[current - 1];
 
 
-        public class ParserErrorException : System.Exception {}
+        public class ParserErrorException : System.Exception
+        {
+        }
     }
 }

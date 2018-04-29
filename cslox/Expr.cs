@@ -7,9 +7,12 @@ namespace cslox {
       T Visit(Assign expr);
       T Visit(Binary expr);
       T Visit(Call expr);
+      T Visit(Get expr);
       T Visit(Grouping expr);
       T Visit(Literal expr);
       T Visit(Logical expr);
+      T Visit(Set expr);
+      T Visit(This expr);
       T Visit(Unary expr);
       T Visit(Variable expr);
     }
@@ -60,6 +63,20 @@ namespace cslox {
       }
     }
 
+    public class Get : Expr {
+      public Expr Obj { get; }
+      public Token Name { get; }
+
+      public Get(Expr obj, Token name) {
+        Obj = obj;
+        Name = name;
+      }
+
+      public override T Accept<T>(IExprVisitor<T> visitor) {
+        return visitor.Visit(this);
+      }
+    }
+
     public class Grouping : Expr {
       public Expr Expression { get; }
 
@@ -93,6 +110,34 @@ namespace cslox {
         Left = left;
         Op = op;
         Right = right;
+      }
+
+      public override T Accept<T>(IExprVisitor<T> visitor) {
+        return visitor.Visit(this);
+      }
+    }
+
+    public class Set : Expr {
+      public Expr Obj { get; }
+      public Token Name { get; }
+      public Expr Value { get; }
+
+      public Set(Expr obj, Token name, Expr value) {
+        Obj = obj;
+        Name = name;
+        Value = value;
+      }
+
+      public override T Accept<T>(IExprVisitor<T> visitor) {
+        return visitor.Visit(this);
+      }
+    }
+
+    public class This : Expr {
+      public Token Keyword { get; }
+
+      public This(Token keyword) {
+        Keyword = keyword;
       }
 
       public override T Accept<T>(IExprVisitor<T> visitor) {

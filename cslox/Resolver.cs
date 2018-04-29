@@ -8,6 +8,7 @@ namespace cslox
         private readonly Interpreter interpreter;
         private readonly Stack<Dictionary<string, bool>> scopes = new Stack<Dictionary<string, bool>>();
         private FunctionType currentFunction = FunctionType.None;
+        private ClassType currentClass = ClassType.None;
 
         public Resolver(Interpreter interpreter)
         {
@@ -40,6 +41,12 @@ namespace cslox
             return Void.Instance;
         }
 
+        public Void Visit(Expr.Get expr)
+        {
+            Resolve(expr.Obj);
+            return Void.Instance;
+        }
+
         public Void Visit(Expr.Grouping expr)
         {
             Resolve(expr.Expression);
@@ -59,6 +66,24 @@ namespace cslox
             return Void.Instance;
         }
 
+        public Void Visit(Expr.Set expr)
+        {
+            Resolve(expr.Value);
+            Resolve(expr.Obj);
+
+            return Void.Instance;
+        }
+
+        public Void Visit(Expr.This expr)
+        {
+            if (currentClass == ClassType.None)
+                Lox.Error(expr.Keyword, "Cannot use 'this' outside of a class.");
+            else
+                ResolveLocal(expr, expr.Keyword);
+
+            return Void.Instance;
+        }
+
         public Void Visit(Expr.Unary expr)
         {
             Resolve(expr.Right);
@@ -73,7 +98,7 @@ namespace cslox
                 var name = expr.Name.Lexeme;
 
                 if (scope.ContainsKey(name) && scope[name] == false) 
-                    Lox.Error(expr.Name, "Cannot reaad local variable in its own initializer.");
+                    Lox.Error(expr.Name, "Cannot read local variable in its own initializer.");
             }
 
             ResolveLocal(expr, expr.Name);
@@ -86,6 +111,33 @@ namespace cslox
             BeginScope();
             Resolve(stmt.Statements);
             EndScope();
+
+            return Void.Instance;
+        }
+
+        public Void Visit(Stmt.Class stmt)
+        {
+            Declare(stmt.Name);
+            Define(stmt.Name);
+
+            var enclosingClass = currentClass;
+            currentClass = ClassType.Class;
+
+            BeginScope();
+            scopes.Peek()["this"] = true;
+
+            foreach (var method in stmt.Methods)
+            {
+                var decl = method.Name.Lexeme.Equals("init")
+                    ? FunctionType.Initializer
+                    : FunctionType.Method;
+
+                ResolveFunction(method, decl);
+            }
+
+            EndScope();
+
+            currentClass = enclosingClass;
 
             return Void.Instance;
         }
@@ -126,7 +178,14 @@ namespace cslox
             if (currentFunction == FunctionType.None)
                 Lox.Error(stmt.Keyword, "Cannot return from top-level code.");
 
-            if (stmt.Value != null) Resolve(stmt.Value);
+            if (stmt.Value != null)
+            {
+                if (currentFunction == FunctionType.Initializer)
+                    Lox.Error(stmt.Keyword, "Cannot return a value from an initializer.");
+
+                Resolve(stmt.Value);
+            }
+
             return Void.Instance;
         }
 
@@ -231,7 +290,15 @@ namespace cslox
         private enum FunctionType
         {
             None,
-            Function
+            Function,
+            Method,
+            Initializer
+        }
+
+        private enum ClassType
+        {
+            None,
+            Class
         }
     }
 

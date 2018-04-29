@@ -5,6 +5,7 @@ namespace cslox {
 
     public interface IStmtVisitor<T> {
       T Visit(Block stmt);
+      T Visit(Class stmt);
       T Visit(Expression stmt);
       T Visit(Function stmt);
       T Visit(If stmt);
@@ -19,6 +20,20 @@ namespace cslox {
 
       public Block(Stmt[] statements) {
         Statements = statements;
+      }
+
+      public override T Accept<T>(IStmtVisitor<T> visitor) {
+        return visitor.Visit(this);
+      }
+    }
+
+    public class Class : Stmt {
+      public Token Name { get; }
+      public Stmt.Function[] Methods { get; }
+
+      public Class(Token name, Stmt.Function[] methods) {
+        Name = name;
+        Methods = methods;
       }
 
       public override T Accept<T>(IStmtVisitor<T> visitor) {
