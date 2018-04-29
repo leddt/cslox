@@ -13,13 +13,13 @@ namespace cslox
             this.closure = closure;
         }
 
-        public int Arity => declaration.Parameters.Count;
+        public int Arity => declaration.Parameters.Length;
 
-        public object Call(Interpreter interpreter, List<object> arguments)
+        public object Call(Interpreter interpreter, object[] arguments)
         {
             var environment = new Environment(closure);
 
-            for (var i = 0; i < declaration.Parameters.Count; i++)
+            for (var i = 0; i < declaration.Parameters.Length; i++)
             {
                 environment.Define(declaration.Parameters[i], arguments[i]);
             }

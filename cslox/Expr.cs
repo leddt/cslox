@@ -1,6 +1,4 @@
 namespace cslox {
-  using System.Collections.Generic;
-
   [System.CodeDom.Compiler.GeneratedCode("cslox.GenerateAst", "0.0.0")]
   public abstract class Expr {
     public abstract T Accept<T>(IExprVisitor<T> visitor);
@@ -49,9 +47,9 @@ namespace cslox {
     public class Call : Expr {
       public Expr Callee { get; }
       public Token Paren { get; }
-      public List<Expr> Arguments { get; }
+      public Expr[] Arguments { get; }
 
-      public Call(Expr callee, Token paren, List<Expr> arguments) {
+      public Call(Expr callee, Token paren, Expr[] arguments) {
         Callee = callee;
         Paren = paren;
         Arguments = arguments;

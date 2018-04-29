@@ -55,22 +55,22 @@ namespace cslox
 
     public class Parser
     {
-        private readonly List<Token> tokens;
+        private readonly Token[] tokens;
         private int current;
 
-        public Parser(List<Token> tokens)
+        public Parser(Token[] tokens)
         {
             this.tokens = tokens;
         }
 
-        public List<Stmt> Parse()
+        public Stmt[] Parse()
         {
             var statements = new List<Stmt>();
 
             while (!IsAtEnd())
                 statements.Add(Declaration());
 
-            return statements;
+            return statements.ToArray();
         }
 
         private Stmt Declaration()
@@ -109,7 +109,7 @@ namespace cslox
             Consume(LeftBrace, $"Expect '{{' before {kind} body.");
             var body = BlockStatement();
 
-            return new Stmt.Function(name, parameters, body.Statements);
+            return new Stmt.Function(name, parameters.ToArray(), body.Statements);
         }
 
         private Stmt VarDeclaration()
@@ -157,7 +157,7 @@ namespace cslox
 
             if (increment != null)
             {
-                body = new Stmt.Block(new List<Stmt> {
+                body = new Stmt.Block(new [] {
                     body,
                     new Stmt.Expression(increment)
                 });
@@ -168,7 +168,7 @@ namespace cslox
 
             if (initializer != null)
             {
-                body = new Stmt.Block(new List<Stmt> {
+                body = new Stmt.Block(new [] {
                     initializer,
                     body
                 });
@@ -231,7 +231,7 @@ namespace cslox
 
             Consume(RightBrace, "Expect '}' after block.");
 
-            return new Stmt.Block(statements);
+            return new Stmt.Block(statements.ToArray());
         }
 
         private Stmt ExpressionStatement()
@@ -395,7 +395,7 @@ namespace cslox
 
             var paren = Consume(RightParen, "Expect ')' after arguments.");
 
-            return new Call(callee, paren, arguments);
+            return new Call(callee, paren, arguments.ToArray());
         }
 
         private Expr Primary()

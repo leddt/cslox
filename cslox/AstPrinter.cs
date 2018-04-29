@@ -21,7 +21,7 @@ namespace cslox
 
         public string Visit(Call expr)
         {
-            return Parenthesize(expr.Callee.Accept(this), expr.Arguments.ToArray());
+            return Parenthesize(expr.Callee.Accept(this), expr.Arguments);
         }
 
         public string Visit(Grouping expr)

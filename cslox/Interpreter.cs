@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
+
 using static cslox.Expr;
 using static cslox.TokenType;
 
@@ -19,7 +18,7 @@ namespace cslox
             Globals.Define("clock", new NativeFunction(0, (i, args) => DateTime.Now.Ticks / TimeSpan.TicksPerSecond));
         }
 
-        public void Interpret(List<Stmt> statements)
+        public void Interpret(Stmt[] statements)
         {
             try
             {
@@ -161,13 +160,13 @@ namespace cslox
         public object Visit(Call expr)
         {
             var callee = Evaluate(expr.Callee);
-            var arguments = expr.Arguments.Select(Evaluate).ToList();
+            var arguments = expr.Arguments.Select(Evaluate).ToArray();
 
             if (!(callee is LoxCallable function))
                 throw new RuntimeErrorException(expr.Paren, "Can only call functions and classes.");
 
-            if (arguments.Count != function.Arity)
-                throw new RuntimeErrorException(expr.Paren, $"Expected {function.Arity} arguments but got {arguments.Count}.");
+            if (arguments.Length != function.Arity)
+                throw new RuntimeErrorException(expr.Paren, $"Expected {function.Arity} arguments but got {arguments.Length}.");
 
             return function.Call(this, arguments);
         }
@@ -221,7 +220,7 @@ namespace cslox
 
         private void Execute(Stmt stmt) => stmt.Accept(this);
 
-        public void ExecuteBlock(List<Stmt> statements, Environment env)
+        public void ExecuteBlock(Stmt[] statements, Environment env)
         {
             var previousEnv = environment;
 

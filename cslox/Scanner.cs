@@ -38,7 +38,7 @@ namespace cslox
             this.source = source;
         }
 
-        public List<Token> ScanTokens()
+        public Token[] ScanTokens()
         {
             while (!IsAtEnd())
             {
@@ -47,7 +47,7 @@ namespace cslox
             }
 
             tokens.Add(new Token(EOF, "", null, line));
-            return tokens;
+            return tokens.ToArray();
         }
 
         private void ScanToken()

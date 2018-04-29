@@ -1,6 +1,4 @@
 namespace cslox {
-  using System.Collections.Generic;
-
   [System.CodeDom.Compiler.GeneratedCode("cslox.GenerateAst", "0.0.0")]
   public abstract class Stmt {
     public abstract T Accept<T>(IStmtVisitor<T> visitor);
@@ -17,9 +15,9 @@ namespace cslox {
     }
 
     public class Block : Stmt {
-      public List<Stmt> Statements { get; }
+      public Stmt[] Statements { get; }
 
-      public Block(List<Stmt> statements) {
+      public Block(Stmt[] statements) {
         Statements = statements;
       }
 
@@ -42,10 +40,10 @@ namespace cslox {
 
     public class Function : Stmt {
       public Token Name { get; }
-      public List<Token> Parameters { get; }
-      public List<Stmt> Body { get; }
+      public Token[] Parameters { get; }
+      public Stmt[] Body { get; }
 
-      public Function(Token name, List<Token> parameters, List<Stmt> body) {
+      public Function(Token name, Token[] parameters, Stmt[] body) {
         Name = name;
         Parameters = parameters;
         Body = body;

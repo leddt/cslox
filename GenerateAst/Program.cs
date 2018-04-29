@@ -20,7 +20,7 @@ namespace GenerateAst
             DefineAst(outputDir, "Expr",
                 "Assign   : Token name, Expr value",
                 "Binary   : Expr left, Token op, Expr right",
-                "Call     : Expr callee, Token paren, List<Expr> arguments",
+                "Call     : Expr callee, Token paren, Expr[] arguments",
                 "Grouping : Expr expression",
                 "Literal  : object value",
                 "Logical  : Expr left, Token op, Expr right",
@@ -29,9 +29,9 @@ namespace GenerateAst
             );
 
             DefineAst(outputDir, "Stmt",
-                "Block      : List<Stmt> statements",
+                "Block      : Stmt[] statements",
                 "Expression : Expr expr",
-                "Function   : Token name, List<Token> parameters, List<Stmt> body",
+                "Function   : Token name, Token[] parameters, Stmt[] body",
                 "If         : Expr condition, Stmt thenBranch, Stmt elseBranch",
                 "Print      : Expr expr",
                 "Return     : Token keyword, Expr value",
@@ -47,8 +47,6 @@ namespace GenerateAst
             using (var writer = File.CreateText(path))
             {
                 writer.WriteLine("namespace cslox {");
-                writer.WriteLine($"  using System.Collections.Generic;");
-                writer.WriteLine();
                 writer.WriteLine($"  [System.CodeDom.Compiler.GeneratedCode(\"cslox.GenerateAst\", \"0.0.0\")]");
                 writer.WriteLine($"  public abstract class {baseName} {{");
 
