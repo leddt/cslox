@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.Serialization;
 using static cslox.Expr;
 using static cslox.TokenType;
 
@@ -7,7 +9,15 @@ namespace cslox
 {
     public class Interpreter : IExprVisitor<object>, Stmt.IStmtVisitor<Void>
     {
-        private Environment environment = new Environment();
+        public readonly Environment Globals = new Environment();
+        private Environment environment;
+
+        public Interpreter()
+        {
+            environment = Globals;
+
+            Globals.Define("clock", new NativeFunction(0, (i, args) => DateTime.Now.Ticks / TimeSpan.TicksPerSecond));
+        }
 
         public void Interpret(List<Stmt> statements)
         {
@@ -37,6 +47,14 @@ namespace cslox
             return Void.Instance;
         }
 
+        public Void Visit(Stmt.Function stmt)
+        {
+            var function = new LoxFunction(stmt, environment);
+            environment.Define(stmt.Name.Lexeme, function);
+
+            return Void.Instance;
+        }
+
         public Void Visit(Stmt.If stmt)
         {
             if (IsTruthy(Evaluate(stmt.Condition)))
@@ -53,6 +71,13 @@ namespace cslox
             Console.WriteLine(Stringify(value));
 
             return Void.Instance;
+        }
+
+        public Void Visit(Stmt.Return stmt)
+        {
+            var value = stmt.Value != null ? Evaluate(stmt.Value) : null;
+
+            throw new ReturnException(value);
         }
 
         public Void Visit(Stmt.Var stmt)
@@ -133,6 +158,20 @@ namespace cslox
             return null;
         }
 
+        public object Visit(Call expr)
+        {
+            var callee = Evaluate(expr.Callee);
+            var arguments = expr.Arguments.Select(Evaluate).ToList();
+
+            if (!(callee is LoxCallable function))
+                throw new RuntimeErrorException(expr.Paren, "Can only call functions and classes.");
+
+            if (arguments.Count != function.Arity)
+                throw new RuntimeErrorException(expr.Paren, $"Expected {function.Arity} arguments but got {arguments.Count}.");
+
+            return function.Call(this, arguments);
+        }
+
         public object Visit(Grouping expr)
         {
             return Evaluate(expr.Expression);
@@ -182,7 +221,7 @@ namespace cslox
 
         private void Execute(Stmt stmt) => stmt.Accept(this);
 
-        private void ExecuteBlock(List<Stmt> statements, Environment env)
+        public void ExecuteBlock(List<Stmt> statements, Environment env)
         {
             var previousEnv = environment;
 
@@ -245,6 +284,16 @@ namespace cslox
 
             result = (default(T), default(T));
             return false;
+        }
+    }
+
+    public class ReturnException : Exception
+    {
+        public object Value { get; }
+
+        public ReturnException(object value)
+        {
+            Value = value;
         }
     }
 

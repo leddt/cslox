@@ -19,6 +19,11 @@ namespace cslox
             return Parenthesize(expr.Op.Lexeme, expr.Left, expr.Right);
         }
 
+        public string Visit(Call expr)
+        {
+            return Parenthesize(expr.Callee.Accept(this), expr.Arguments.ToArray());
+        }
+
         public string Visit(Grouping expr)
         {
             return Parenthesize("group", expr.Expression);

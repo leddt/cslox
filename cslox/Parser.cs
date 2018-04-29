@@ -9,14 +9,18 @@ namespace cslox
     /*
         program        → declaration* EOF ;
                       
-        declaration    → varDecl
+        declaration    → funDecl
+                       | varDecl
                        | statement ;
                       
+        funDecl        → "fun" IDENTIFIER "(" parameters? ")" block ;
+        parameters     → IDENTIFIER ( "," IDENTIFIER )* ;
         varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
         statement      → exprStmt
                        | forStmt
                        | ifStmt
                        | printStmt
+                       | returnStmt
                        | whileStmt
                        | block;
                       
@@ -26,6 +30,7 @@ namespace cslox
                                    expression? ")" statement ;
         ifStmt         → "if" "(" expression ")" statement ( "else" statement )? ;
         printStmt      → "print" expression ";" ;
+        returnStmt     → "return" expression? ";" ;
         whileStmt      → "while" "(" expression ")" statement ;
         block          → "{" declaration* "}" ;
         
@@ -39,7 +44,9 @@ namespace cslox
         addition       → multiplication ( ( "-" | "+" ) multiplication )* ;
         multiplication → unary ( ( "/" | "*" ) unary )* ;
         unary          → ( "!" | "-" ) unary
-                       | primary ;
+                       | call ;
+        call           → primary ( "(" arguments? ")" )* ;
+        arguments      → expression ( "," expression )* ;
         primary        → "true" | "false" | "nil" | "this"
                        | NUMBER | STRING
                        | "(" expression ")"
@@ -70,6 +77,7 @@ namespace cslox
         {
             try
             {
+                if (Match(Fun)) return FunctionDeclaration("function");
                 if (Match(Var)) return VarDeclaration();
                 return Statement();
             }
@@ -78,6 +86,30 @@ namespace cslox
                 Synchronize();
                 return null;
             }
+        }
+
+        private Stmt FunctionDeclaration(string kind)
+        {
+            var name = Consume(Identifier, $"Expect {kind} name.");
+
+            Consume(LeftParen, $"Expect '(' after {kind} name.");
+
+            var parameters = new List<Token>();
+            if (!Check(RightParen))
+            {
+                do
+                {
+                    if (parameters.Count > 8) Error(Peek(), "Cannot have more than 8 parameters.");
+                    parameters.Add(Consume(Identifier, "Expect parameter name."));
+                } while (Match(Comma));
+            }
+
+            Consume(RightParen, $"Expect ')' after parameters.");
+
+            Consume(LeftBrace, $"Expect '{{' before {kind} body.");
+            var body = BlockStatement();
+
+            return new Stmt.Function(name, parameters, body.Statements);
         }
 
         private Stmt VarDeclaration()
@@ -97,6 +129,7 @@ namespace cslox
             if (Match(For)) return ForStatement();
             if (Match(If)) return IfStatement();
             if (Match(Print)) return PrintStatement();
+            if (Match(Return)) return ReturnStatement();
             if (Match(While)) return WhileStatement();
             if (Match(LeftBrace)) return BlockStatement();
             return ExpressionStatement();
@@ -164,6 +197,18 @@ namespace cslox
             Consume(Semicolon, "Expect ';' after value.");
 
             return new Stmt.Print(value);
+        }
+
+        private Stmt ReturnStatement()
+        {
+            var keyword = Previous();
+            var value = Check(Semicolon)
+                ? null
+                : Expression();
+
+            Consume(Semicolon, "Expect ';' after return value.");
+
+            return new Stmt.Return(keyword, value);
         }
 
         private Stmt WhileStatement()
@@ -317,7 +362,40 @@ namespace cslox
                 return new Unary(op, right);
             }
 
-            return Primary();
+            return Call();
+        }
+
+        private Expr Call()
+        {
+            var expr = Primary();
+
+            while (true)
+            {
+                if (Match(LeftParen))
+                    expr = FinishCall(expr);
+                else
+                    break;
+            }
+
+            return expr;
+        }
+
+        private Expr FinishCall(Expr callee)
+        {
+            var arguments = new List<Expr>();
+            if (!Check(RightParen))
+            {
+                do
+                {
+                    if (arguments.Count > 8) Error(Peek(), "Cannot have more than 8 arguments.");
+
+                    arguments.Add(Expression());
+                } while (Match(Comma));
+            }
+
+            var paren = Consume(RightParen, "Expect ')' after arguments.");
+
+            return new Call(callee, paren, arguments);
         }
 
         private Expr Primary()

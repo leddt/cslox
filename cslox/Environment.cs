@@ -14,10 +14,8 @@ namespace cslox
             Enclosing = enclosing;
         }
 
-        public void Define(Token name, object value)
-        {
-            values[name.Lexeme] = value;
-        }
+        public void Define(Token name, object value) => Define(name.Lexeme, value);
+        public void Define(string name, object value) => values[name] = value;
 
         public object Get(Token name)
         {

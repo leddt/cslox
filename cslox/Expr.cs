@@ -8,6 +8,7 @@ namespace cslox {
     public interface IExprVisitor<T> {
       T Visit(Assign expr);
       T Visit(Binary expr);
+      T Visit(Call expr);
       T Visit(Grouping expr);
       T Visit(Literal expr);
       T Visit(Logical expr);
@@ -38,6 +39,22 @@ namespace cslox {
         Left = left;
         Op = op;
         Right = right;
+      }
+
+      public override T Accept<T>(IExprVisitor<T> visitor) {
+        return visitor.Visit(this);
+      }
+    }
+
+    public class Call : Expr {
+      public Expr Callee { get; }
+      public Token Paren { get; }
+      public List<Expr> Arguments { get; }
+
+      public Call(Expr callee, Token paren, List<Expr> arguments) {
+        Callee = callee;
+        Paren = paren;
+        Arguments = arguments;
       }
 
       public override T Accept<T>(IExprVisitor<T> visitor) {
