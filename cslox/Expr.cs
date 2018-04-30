@@ -12,6 +12,7 @@ namespace cslox {
       T Visit(Literal expr);
       T Visit(Logical expr);
       T Visit(Set expr);
+      T Visit(Super expr);
       T Visit(This expr);
       T Visit(Unary expr);
       T Visit(Variable expr);
@@ -126,6 +127,20 @@ namespace cslox {
         Obj = obj;
         Name = name;
         Value = value;
+      }
+
+      public override T Accept<T>(IExprVisitor<T> visitor) {
+        return visitor.Visit(this);
+      }
+    }
+
+    public class Super : Expr {
+      public Token Keyword { get; }
+      public Token Method { get; }
+
+      public Super(Token keyword, Token method) {
+        Keyword = keyword;
+        Method = method;
       }
 
       public override T Accept<T>(IExprVisitor<T> visitor) {

@@ -74,6 +74,17 @@ namespace cslox
             return Void.Instance;
         }
 
+        public Void Visit(Expr.Super expr)
+        {
+            if (currentClass == ClassType.None)
+                Lox.Error(expr.Keyword, "Cannot use 'super' outside of a class.");
+            else if (currentClass != ClassType.Subclass)
+                Lox.Error(expr.Keyword, "Cannot use 'super' in a class with no superclass.");
+
+            ResolveLocal(expr, expr.Keyword);
+            return Void.Instance;
+        }
+
         public Void Visit(Expr.This expr)
         {
             if (currentClass == ClassType.None)
@@ -123,6 +134,15 @@ namespace cslox
             var enclosingClass = currentClass;
             currentClass = ClassType.Class;
 
+            if (stmt.Superclass != null)
+            {
+                currentClass = ClassType.Subclass;
+                Resolve(stmt.Superclass);
+
+                BeginScope();
+                scopes.Peek()["super"] = true;
+            }
+
             BeginScope();
             scopes.Peek()["this"] = true;
 
@@ -136,6 +156,7 @@ namespace cslox
             }
 
             EndScope();
+            if (stmt.Superclass != null) EndScope();
 
             currentClass = enclosingClass;
 
@@ -298,7 +319,8 @@ namespace cslox
         private enum ClassType
         {
             None,
-            Class
+            Class,
+            Subclass
         }
     }
 

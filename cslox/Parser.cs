@@ -13,7 +13,8 @@ namespace cslox
                        | varDecl
                        | statement ;
 
-        classDecl      → "class" IDENTIFIER "{" function* "}" ;
+        classDecl      → "class" IDENTIFIER ( "<" IDENTIFIER )?
+                         "{" function* "}" ;
         funDecl        → "fun" function ;
         function       → IDENTIFIER "(" parameters? ")" block ;
         parameters     → IDENTIFIER ( "," IDENTIFIER )* ;
@@ -52,7 +53,8 @@ namespace cslox
         primary        → "true" | "false" | "nil" | "this"
                        | NUMBER | STRING
                        | "(" expression ")"
-                       | IDENTIFIER ;
+                       | IDENTIFIER 
+                       | "super" "." IDENTIFIER ;
      */
 
     public class Parser
@@ -94,6 +96,14 @@ namespace cslox
         private Stmt ClassDeclaration()
         {
             var name = Consume(Identifier, "Expect class name.");
+
+            Variable superclass = null;
+            if (Match(Less))
+            {
+                Consume(Identifier, "Expect superclass name.");
+                superclass = new Variable(Previous());
+            }
+
             Consume(LeftBrace, "Expect '{' before class body.");
 
             var methods = new List<Stmt.Function>();
@@ -102,7 +112,7 @@ namespace cslox
 
             Consume(RightBrace, "Expect '}' after class body.");
 
-            return new Stmt.Class(name, methods.ToArray());
+            return new Stmt.Class(name, superclass, methods.ToArray());
         }
 
         private Stmt.Function FunctionDeclaration(string kind)
@@ -434,6 +444,15 @@ namespace cslox
             if (Match(Nil)) return new Literal(null);
 
             if (Match(Number, String)) return new Literal(Previous().Literal);
+
+            if (Match(TokenType.Super))
+            {
+                var keyword = Previous();
+                Consume(Dot, "Expect '.' after 'super'.");
+                var method = Consume(Identifier, "Expect superclass method name.");
+
+                return new Super(keyword, method);
+            }
 
             if (Match(TokenType.This)) return new This(Previous());
 

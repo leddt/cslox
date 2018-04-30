@@ -4,13 +4,15 @@ namespace cslox
 {
     public class LoxClass : LoxCallable
     {
+        private readonly LoxClass superclass;
         private readonly Dictionary<string, LoxFunction> methods;
 
         public string Name { get; }
         public int Arity => methods.ContainsKey("init") ? methods["init"].Arity : 0;
 
-        public LoxClass(string name, Dictionary<string, LoxFunction> methods)
+        public LoxClass(string name, LoxClass superclass, Dictionary<string, LoxFunction> methods)
         {
+            this.superclass = superclass;
             this.methods = methods;
             Name = name;
         }
@@ -29,7 +31,7 @@ namespace cslox
         {
             return methods.ContainsKey(name) 
                 ? methods[name].Bind(instance) 
-                : null;
+                : superclass?.FindMethod(instance, name);
         }
 
         public override string ToString() => Name;

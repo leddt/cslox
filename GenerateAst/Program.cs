@@ -25,6 +25,7 @@ namespace GenerateAst
                 "Literal  : object value",
                 "Logical  : Expr left, Token op, Expr right",
                 "Set      : Expr obj, Token name, Expr value",
+                "Super    : Token keyword, Token method",
                 "This     : Token keyword",
                 "Unary    : Token op, Expr right",
                 "Variable : Token name"
@@ -32,7 +33,7 @@ namespace GenerateAst
 
             DefineAst(outputDir, "Stmt",
                 "Block      : Stmt[] statements",
-                "Class      : Token name, Stmt.Function[] methods",
+                "Class      : Token name, Expr.Variable superclass, Stmt.Function[] methods",
                 "Expression : Expr expr",
                 "Function   : Token name, Token[] parameters, Stmt[] body",
                 "If         : Expr condition, Stmt thenBranch, Stmt elseBranch",

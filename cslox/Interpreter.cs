@@ -45,6 +45,17 @@ namespace cslox
         {
             environment.Define(stmt.Name.Lexeme, null);
 
+            object superclass = null;
+            if (stmt.Superclass != null)
+            {
+                superclass = Evaluate(stmt.Superclass);
+                if (!(superclass is LoxClass))
+                    throw new RuntimeErrorException(stmt.Superclass.Name, "Superclass must be a class");
+
+                environment = new Environment(environment);
+                environment.Define("super", superclass);
+            }
+
             var methods = new Dictionary<string, LoxFunction>();
             foreach (var method in stmt.Methods)
             {
@@ -52,7 +63,11 @@ namespace cslox
                 methods[method.Name.Lexeme] = function;
             }
 
-            var klass = new LoxClass(stmt.Name.Lexeme, methods);
+            var klass = new LoxClass(stmt.Name.Lexeme, (LoxClass) superclass, methods);
+
+            if (superclass != null)
+                environment = environment.Enclosing;
+
             environment.Assign(stmt.Name, klass);
 
             return null;
@@ -247,6 +262,20 @@ namespace cslox
             }
 
             throw new RuntimeErrorException(expr.Name, "Only instances have fields.");
+        }
+
+        public object Visit(Super expr)
+        {
+            var distance = locals[expr];
+            
+            var superclass = (LoxClass) environment.GetAt(distance, "super");
+            var obj = (LoxInstance) environment.GetAt(distance - 1, "this");
+            var method = superclass.FindMethod(obj, expr.Method.Lexeme);
+
+            if (method == null)
+                throw new RuntimeErrorException(expr.Method, $"Undefined property '{expr.Method.Lexeme}'.");
+
+            return method;
         }
 
         public object Visit(This expr)
